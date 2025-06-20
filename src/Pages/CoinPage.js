@@ -1,4 +1,8 @@
-import { LinearProgress, makeStyles, Typography } from "@material-ui/core";
+import {
+  LinearProgress,
+  makeStyles,
+  Typography,
+} from "@material-ui/core";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -10,14 +14,20 @@ import { CryptoState } from "../CryptoContext";
 
 const CoinPage = () => {
   const { id } = useParams();
-  const [coin, setCoin] = useState();
+  const [coin, setCoin] = useState(undefined); // undefined = loading, null = error
+  const [error, setError] = useState(false);
 
   const { currency, symbol } = CryptoState();
 
   const fetchCoin = async () => {
-    const { data } = await axios.get(SingleCoin(id));
-
-    setCoin(data);
+    try {
+      const { data } = await axios.get(SingleCoin(id));
+      setCoin(data);
+    } catch (err) {
+      console.error("Failed to fetch coin:", err.message);
+      setError(true);
+      setCoin(null);
+    }
   };
 
   useEffect(() => {
@@ -78,7 +88,20 @@ const CoinPage = () => {
 
   const classes = useStyles();
 
-  if (!coin) return <LinearProgress style={{ backgroundColor: "gold" }} />;
+  if (coin === undefined)
+    return <LinearProgress style={{ backgroundColor: "gold" }} />;
+
+  if (coin === null || error)
+    return (
+      <Typography
+        variant="h5"
+        align="center"
+        style={{ marginTop: 50, color: "red", fontFamily: "Montserrat" }}
+      >
+        ⚠️ Coin not found or failed to load. Please check your internet
+        connection or coin ID.
+      </Typography>
+    );
 
   return (
     <div className={classes.container}>
@@ -100,13 +123,8 @@ const CoinPage = () => {
             <Typography variant="h5" className={classes.heading}>
               Rank:
             </Typography>
-            &nbsp; &nbsp;
-            <Typography
-              variant="h5"
-              style={{
-                fontFamily: "Montserrat",
-              }}
-            >
+            &nbsp;&nbsp;
+            <Typography variant="h5" style={{ fontFamily: "Montserrat" }}>
               {numberWithCommas(coin?.market_cap_rank)}
             </Typography>
           </span>
@@ -115,30 +133,21 @@ const CoinPage = () => {
             <Typography variant="h5" className={classes.heading}>
               Current Price:
             </Typography>
-            &nbsp; &nbsp;
-            <Typography
-              variant="h5"
-              style={{
-                fontFamily: "Montserrat",
-              }}
-            >
+            &nbsp;&nbsp;
+            <Typography variant="h5" style={{ fontFamily: "Montserrat" }}>
               {symbol}{" "}
               {numberWithCommas(
                 coin?.market_data.current_price[currency.toLowerCase()]
               )}
             </Typography>
           </span>
+
           <span style={{ display: "flex" }}>
             <Typography variant="h5" className={classes.heading}>
               Market Cap:
             </Typography>
-            &nbsp; &nbsp;
-            <Typography
-              variant="h5"
-              style={{
-                fontFamily: "Montserrat",
-              }}
-            >
+            &nbsp;&nbsp;
+            <Typography variant="h5" style={{ fontFamily: "Montserrat" }}>
               {symbol}{" "}
               {numberWithCommas(
                 coin?.market_data.market_cap[currency.toLowerCase()]
